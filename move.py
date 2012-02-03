@@ -75,7 +75,6 @@ class Move(ModelSQL, ModelView):
 
         result = []
 
-        print "EXPLODE"
         
         """ Check if kit has been already expanded """
         if line.kit_child_lines:
@@ -103,26 +102,42 @@ class Move(ModelSQL, ModelView):
 
     def write(self, ids, values):
         """ Regenerate kit if quantity, product or unit has changed """
-        
-        reset_kit = False
-        if 'product' in values or 'quantity' in values or 'unit' in values:
-            reset_kit = True
+
+        print "----------------------------------------"
+        print ids, values
+
+        if not('product' in values or 'quantity' in values or 'unit' in values):
+            print "not vals"
+            return super(Move, self).write(ids, values)
+
 
         if isinstance(ids, (int, long)):
             ids = [ids]
         ids = ids[:]
 
-        if reset_kit:
-            to_delete = []
-            for line in self.browse(ids):
-                to_delete += self.kit_tree_ids(line)
-            self.delete(to_delete)
-            ids = list(set(ids) - set(to_delete))
-        res = super(Move, self).write(ids, values)
-        if reset_kit:
-            for id in ids:
-                self.explode_kit(id)
-        return res
+
+        kits_to_reset = []
+        moves_to_delete = []
+        for line in self.browse(ids):
+            print "line:",line.product.name
+            if not line.product.kit:
+                continue
+            if ('product' in values and line.product.id != values['product'])\
+                or ('quantity' in values and line.quantity != values['quantity'])\
+                or ('unit' in values and line.unit != values['unit']):
+                kits_to_reset.append( line.id )
+                moves_to_delete += self.kit_tree_ids(line)
+
+
+        if moves_to_delete:
+            self.delete(moves_to_delete)
+            
+        if kits_to_reset:
+            for kit in kits_to_reset:
+                print "explode kit",kit
+                self.explode_kit(kit)
+            
+        return super(Move, self).write(ids, values)
 
     def delete( self, ids):
         """ Check if stock move to delete belongs to kit."""
