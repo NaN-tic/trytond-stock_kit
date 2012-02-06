@@ -3,7 +3,7 @@
 #this repository contains the full copyright notices and license terms.
 {
     'name' : 'Stock Product Kit',
-    'version' : '2.3.0',
+    'version' : '2.2.0',
     'author' : 'NaN·tic',
     'email': 'info@nan-tic.com',
     'website': 'http://www.nan-tic.com/',

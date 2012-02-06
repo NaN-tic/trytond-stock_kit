@@ -2,19 +2,93 @@
 #this repository contains the full copyright notices and license terms.
 from decimal import Decimal
 from functools import reduce
-from trytond.model import ModelView, ModelSQL, fields, OPERATORS
+from trytond.model import ModelWorkflow,ModelView, ModelSQL, fields, OPERATORS
 from trytond.backend import TableHandler
 from trytond.transaction import Transaction
 from trytond.pool import Pool
 from trytond.pyson import In, Eval, Not, Equal, If, Get, Bool
+import copy
 
 STATES = {
     'readonly': In(Eval('state'), ['cancel', 'assigned', 'done']),
 }
 DEPENDS = ['state']
 
+class ShipmentIn(ModelWorkflow, ModelSQL, ModelView):
+    "Supplier Shipment"
+    _name = 'stock.shipment.in'
+
+    def get_inventory_moves(self, ids, name):
+        res = {}
+        for shipment in self.browse(ids):
+            res[shipment.id] = []
+            for move in shipment.moves:
+                if move.kit_parent_line:
+                    continue
+                if move.from_location.id == shipment.warehouse.input_location.id:
+                    res[shipment.id].append(move.id)
+        return res
+ShipmentIn()
+
+
+class ShipmentInReturn(ModelWorkflow, ModelSQL, ModelView):
+    "Supplier Return Shipment"
+    _name = 'stock.shipment.in.return'
+
+    def get_inventory_moves(self, ids, name):
+        res = {}
+        for shipment in self.browse(ids):
+            res[shipment.id] = []
+            for move in shipment.moves:
+                if move.kit_parent_line:
+                    continue
+                if move.to_location.id == \
+                        shipment.warehouse.output_location.id:
+                    res[shipment.id].append(move.id)
+        return res
+    
+ShipmentInReturn()
+
+class ShipmentOut(ModelWorkflow, ModelSQL, ModelView):
+    "Customer Shipment"
+    _name = 'stock.shipment.out'
+
+    def get_inventory_moves(self, ids, name):
+        res = {}
+        for shipment in self.browse(ids):
+            res[shipment.id] = []
+            for move in shipment.moves:
+                if move.kit_parent_line:
+                    continue
+                if move.to_location.id == \
+                        shipment.warehouse.output_location.id:
+                    res[shipment.id].append(move.id)
+        return res
+
+ShipmentOut()
+
+class ShipmentOutReturn(ModelWorkflow, ModelSQL, ModelView):
+    "Customer Return Shipment"
+    _name = 'stock.shipment.out.return'
+
+    def get_inventory_moves(self, ids, name):
+        res = {}
+        for shipment in self.browse(ids):
+            res[shipment.id] = []
+            for move in shipment.moves:
+                if move.kit_parent_line:
+                    continue
+                
+                if move.from_location.id == \
+                        shipment.warehouse.input_location.id:
+                    res[shipment.id].append(move.id)
+        return res
+
+ShipmentOutReturn()
+
 
 class Move(ModelSQL, ModelView):
+    "Stock Move"
     _name = 'stock.move'
 
     sequence = fields.Integer('Sequence')
@@ -28,6 +102,13 @@ class Move(ModelSQL, ModelView):
     def __init__(self):
         super(Move, self).__init__()
         self._order.insert( 0, ('id','ASC'))
+        
+        required = ~(Eval('kit_parent_line'))
+        print required
+        self.unit_price = copy.copy(self.unit_price)
+        self.unit_price.states['required'] = False
+        self._reset_columns()
+
 
     def default_kit_depth(self):
         return 0
@@ -103,11 +184,7 @@ class Move(ModelSQL, ModelView):
     def write(self, ids, values):
         """ Regenerate kit if quantity, product or unit has changed """
 
-        print "----------------------------------------"
-        print ids, values
-
         if not('product' in values or 'quantity' in values or 'unit' in values):
-            print "not vals"
             return super(Move, self).write(ids, values)
 
 
@@ -119,7 +196,6 @@ class Move(ModelSQL, ModelView):
         kits_to_reset = []
         moves_to_delete = []
         for line in self.browse(ids):
-            print "line:",line.product.name
             if not line.product.kit:
                 continue
             if ('product' in values and line.product.id != values['product'])\
@@ -134,7 +210,6 @@ class Move(ModelSQL, ModelView):
             
         if kits_to_reset:
             for kit in kits_to_reset:
-                print "explode kit",kit
                 self.explode_kit(kit)
             
         return super(Move, self).write(ids, values)
