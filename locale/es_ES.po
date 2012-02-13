@@ -1,0 +1,57 @@
+#
+# Angel Alvarez <angel@nan-tic.com>, 2012.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Last-Translator: Angel Alvarez <angel@nan-tic.com>\n"
+"PO-Revision-Date: 2012-02-11 12:13+0100\n"
+"Project-Id-Version: \n"
+"Language-Team: Catalan <kde-i18n-ca@kde.org>\n"
+"Language: ca\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Lokalize 1.2\n"
+"MIME-Version: 1.0\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+
+msgctxt "field:product.product,explode_kit_in_shipments:0"
+msgid "Explode in Shipments"
+msgstr "Expandir en Albaranes."
+
+msgctxt "field:product.product,stock_depends_on_kit_components:0"
+msgid "Stock Depends on Components"
+msgstr "El estoc depende de los componentes."
+
+msgctxt "field:stock.move,kit_child_lines:0"
+msgid "Lines in the kit"
+msgstr "Línieas del kit"
+
+msgctxt "field:stock.move,kit_depth:0"
+msgid "Depth"
+msgstr "Profundidad"
+
+msgctxt "field:stock.move,kit_parent_line:0"
+msgid "Parent Kit Line"
+msgstr "Línia padre"
+
+msgctxt "field:stock.move,sequence:0"
+msgid "Sequence"
+msgstr "Secuéncia"
+
+msgctxt "help:product.product,stock_depends_on_kit_components:0"
+msgid ""
+"Indicates weather the stock of the current kit should depend on its "
+"components or not."
+msgstr "Indica si el estoc del kit depende de los componentes o no."
+
+msgctxt "help:stock.move,kit_child_lines:0"
+msgid "Subcomponents of the kit."
+msgstr "Componentes del kit."
+
+msgctxt "help:stock.move,kit_depth:0"
+msgid "Depth of the line if it is part of a kit."
+msgstr "Profundidad si la línia forma parte de un kit."
+
+msgctxt "help:stock.move,kit_parent_line:0"
+msgid "The kit that contains this product."
+msgstr "El kit que contiene este producto."
+
