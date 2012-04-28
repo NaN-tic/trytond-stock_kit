@@ -10,21 +10,20 @@ import copy
 
 DEPENDS = ['stock_depends_on_kit_components']
 
+
 class InventoryLine(ModelSQL, ModelView):
     _name = 'stock.inventory.line'
 
-
     def __init__(self):
-        super(InventoryLine,self).__init__()
+        super(InventoryLine, self).__init__()
         self.product = copy.copy(self.product)
         self.product.depends = copy.copy(self.product.depends) + DEPENDS
-        self.product.domain = copy.copy(self.product.domain) + [ [
+        self.product.domain = copy.copy(self.product.domain) + [[
             'OR', 
-                ('kit','=',False),
-                ('stock_depends_on_kit_components','=',False)                
+                ('kit', '=', False),
+                ('stock_depends_on_kit_components', '=', False)
             ]
                                                                  ]
-        
         self._reset_columns()
 
 InventoryLine()

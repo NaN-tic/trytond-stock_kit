@@ -27,7 +27,7 @@ class Move(ModelSQL, ModelView):
 
     def __init__(self):
         super(Move, self).__init__()
-        self._order.insert( 0, ('id','ASC'))
+        self._order.insert(0, ('id', 'ASC'))
 
     def default_kit_depth(self):
         return 0
@@ -74,21 +74,35 @@ class Move(ModelSQL, ModelView):
         line = self.browse(id)
 
         result = []
+        
 
+        """ Check if kit need to be Exploded """
+        explode = Transaction().context.get('explode_kit',True)
+        if not explode:
+            return result
         
         """ Check if kit has been already expanded """
         if line.kit_child_lines:
+            return result
+        
+        """ Check if line belongs to any shipment """
+        if not (line.shipment_in or line.shipment_out or
+            line.shipment_out_return or line.shipment_in_return or 
+            line.shipment_internal):
             return result
 
         """ Explode kit """
         for kit_line in line.product.kit_lines:
             values = self.get_kit_line(line, kit_line, depth)
             new_id = self.create(values)
-            
-            self.explode_kit(new_id, depth+1)
+
+            self.explode_kit(new_id, depth + 1)
         return result
 
     def create(self, values):
+        
+        print Transaction().context
+        
         id = super(Move, self).create(values)
         self.explode_kit(id)
         return id
@@ -103,23 +117,18 @@ class Move(ModelSQL, ModelView):
     def write(self, ids, values):
         """ Regenerate kit if quantity, product or unit has changed """
 
-        print "----------------------------------------"
-        print ids, values
-
         if not('product' in values or 'quantity' in values or 'unit' in values):
             print "not vals"
             return super(Move, self).write(ids, values)
 
-
         if isinstance(ids, (int, long)):
             ids = [ids]
-        ids = ids[:]
 
+        ids = ids[:]
 
         kits_to_reset = []
         moves_to_delete = []
         for line in self.browse(ids):
-            print "line:",line.product.name
             if not line.product.kit:
                 continue
             if ('product' in values and line.product.id != values['product'])\
@@ -128,30 +137,28 @@ class Move(ModelSQL, ModelView):
                 kits_to_reset.append( line.id )
                 moves_to_delete += self.kit_tree_ids(line)
 
-
         if moves_to_delete:
             self.delete(moves_to_delete)
-            
+
         if kits_to_reset:
             for kit in kits_to_reset:
-                print "explode kit",kit
                 self.explode_kit(kit)
-            
+
         return super(Move, self).write(ids, values)
 
-    def delete( self, ids):
+    def delete(self, ids):
         """ Check if stock move to delete belongs to kit."""
         ids = ids[:]
-        
+
         for line in self.browse(ids):
             if line.kit_parent_line:
                 continue
-                
+
             if line.kit_child_lines:
                 """ Removing kit, adding all childs products to delete"""
                 ids += self.kit_tree_ids(line)
 
-        return super(Move,self).delete(ids)
-        
+        return super(Move, self).delete(ids)
+
 
 Move()

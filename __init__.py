@@ -4,5 +4,5 @@
 from .product import *
 from .move import *
 from .inventory import *
-
+from .shipment import *
 
