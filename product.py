@@ -9,7 +9,7 @@ import math
 __all__ = ['Product']
 __metaclass__ = PoolMeta
 STATES = {
-    'readonly': Bool(~Eval('kit')),
+    'invisible': Bool(~Eval('kit')),
 }
 DEPENDS = ['kit']
 
