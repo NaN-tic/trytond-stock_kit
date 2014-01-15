@@ -3,7 +3,7 @@
 #the full copyright notices and license terms.
 from trytond.model import ModelView, Workflow
 from trytond.transaction import Transaction
-from trytond.pool import Pool, PoolMeta
+from trytond.pool import PoolMeta
 
 __all__ = ['ShipmentIn', 'ShipmentOut']
 __metaclass__ = PoolMeta
