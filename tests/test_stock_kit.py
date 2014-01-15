@@ -1,23 +1,22 @@
 #!/usr/bin/env python
-#This file is part of Tryton.  The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
-
-import sys, os
+#This file is part stock_kit module for Tryton.
+#The COPYRIGHT file at the top level of this repository contains 
+#the full copyright notices and license terms.
+import sys
+import os
 DIR = os.path.abspath(os.path.normpath(os.path.join(__file__,
     '..', '..', '..', '..', '..', 'trytond')))
 if os.path.isdir(DIR):
     sys.path.insert(0, os.path.dirname(DIR))
 
 import unittest
-from decimal import Decimal
 import trytond.tests.test_tryton
-from trytond.tests.test_tryton import POOL, DB_NAME, USER, CONTEXT, test_view,\
-    test_depends
-from trytond.transaction import Transaction
+from trytond.tests.test_tryton import test_view, test_depends
 
-class ProductKitTestCase(unittest.TestCase):
+
+class StockKitTestCase(unittest.TestCase):
     '''
-    Test ProductKit module.
+    Test Stock Kit module.
     '''
 
     def setUp(self):
@@ -35,10 +34,11 @@ class ProductKitTestCase(unittest.TestCase):
         '''
         test_depends()
 
+
 def suite():
     suite = trytond.tests.test_tryton.suite()
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(
-        ProductKitTestCase))
+        StockKitTestCase))
     return suite
 
 if __name__ == '__main__':

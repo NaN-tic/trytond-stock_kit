@@ -4,8 +4,8 @@ include TODO
 include COPYRIGHT
 include CHANGELOG
 include LICENSE
+include tryton.cfg
 include *.xml
-include *.odt
+include view/*.xml
 include locale/*.po
 include doc/*
-include icons/*

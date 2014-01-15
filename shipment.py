@@ -1,16 +1,16 @@
-#This file is part of Tryton.  The COPYRIGHT file at the top level of
-#this repository contains the full copyright notices and license terms.
-
-
-from trytond.model import ModelView, ModelSQL, fields, Workflow
-from trytond.pool import Pool
-from trytond.pyson import Eval
+#This file is part stock_kit module for Tryton.
+#The COPYRIGHT file at the top level of this repository contains 
+#the full copyright notices and license terms.
+from trytond.model import ModelView, Workflow
 from trytond.transaction import Transaction
+from trytond.pool import Pool, PoolMeta
+
+__all__ = ['ShipmentIn', 'ShipmentOut']
+__metaclass__ = PoolMeta
 
 
-class ShipmentIn(Workflow, ModelSQL, ModelView):
-    "Supplier Shipment"
-    _name = 'stock.shipment.in'
+class ShipmentIn:
+    __name__ = 'stock.shipment.in'
 
     def create_inventory_moves(self, shipments):
         """ ensure no explode kits again on inventory moves """
@@ -19,12 +19,9 @@ class ShipmentIn(Workflow, ModelSQL, ModelView):
         with Transaction().set_context(context):
             return super(ShipmentIn, self).create_inventory_moves(shipments)
 
-ShipmentIn()
 
-
-class ShipmentOut(Workflow, ModelSQL, ModelView):
-
-    _name = 'stock.shipment.out'
+class ShipmentOut:
+    __name__ = 'stock.shipment.out'
 
     @ModelView.button
     @Workflow.transition('waiting')
@@ -33,5 +30,3 @@ class ShipmentOut(Workflow, ModelSQL, ModelView):
         context['explode_kit'] = False
         with Transaction().set_context(context):
             return super(ShipmentOut, self).wait(ids)
-
-ShipmentOut()

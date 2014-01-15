@@ -1,8 +1,7 @@
 trytond_stock_kit
-===================
+=================
 
 The stock_kit module of the Tryton application platform.
-See __tryton__.py
 
 Installing
 ----------
