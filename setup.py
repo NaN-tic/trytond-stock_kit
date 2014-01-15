@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 #This file is part stock_kit module for Tryton.
-#The COPYRIGHT file at the top level of this repository contains 
+#The COPYRIGHT file at the top level of this repository contains
 #the full copyright notices and license terms.
 
 from setuptools import setup
@@ -42,7 +42,8 @@ tests_require = ['proteus >= %s.%s, < %s.%s' %
 
 setup(name='%s_%s' % (PREFIX, MODULE),
     version=info.get('version', '0.0.1'),
-    description='Tryton module allows product kits to be exploded in shipments',
+    description='Tryton module allows product kits to be exploded in '
+        'shipments',
     long_description=read('README'),
     author='NaN·tic',
     url='http://www.nan-tic.com/',
