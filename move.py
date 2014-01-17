@@ -86,29 +86,20 @@ class Move:
     @classmethod
     def write(cls, moves, values):
         ''' Regenerate kit if quantity, product or unit has changed '''
-        if not('product' in values or 'quantity' in values
-                or 'unit' in values):
-            return super(Move, cls).write(moves, values)
+        reset_kit = False
+        if 'product' in values or 'quantity' in values or 'unit' in values:
+            reset_kit = True
         moves = moves[:]
-        kits_to_reset = []
-        moves_to_delete = []
-        for move in moves:
-            if not move.product.kit:
-                continue
-            if (('product' in values and move.product.id != values['product'])
-                    or
-                    ('quantity' in values
-                        and move.quantity != values['quantity'])
-                    or
-                    ('unit' in values and move.unit != values['unit'])):
-                kits_to_reset.append(move.id)
-                moves_to_delete += move.get_kit_moves()
-        if moves_to_delete:
-            cls.delete(moves_to_delete)
-        if kits_to_reset:
-            for kit in kits_to_reset:
-                cls.explode_kit(kit)
-        return super(Move, cls).write(moves, values)
+        if reset_kit:
+            to_delete = []
+            for move in moves:
+                to_delete += move.get_kit_moves()
+            cls.delete(to_delete)
+            moves = list(set(moves) - set(to_delete))
+        res = super(Move, cls).write(moves, values)
+        if reset_kit:
+            cls.explode_kit(moves)
+        return res
 
     @classmethod
     def delete(cls, moves):
