@@ -3,9 +3,9 @@
 #the full copyright notices and license terms.
 from trytond.pool import Pool
 from .product import *
+from .shipment import *
 from .move import *
 from .inventory import *
-from .shipment import *
 
 
 def register():
@@ -16,3 +16,6 @@ def register():
         Move,
         InventoryLine,
         module='stock_kit', type_='model')
+    Pool.register(
+        CreateShipmentOutReturn,
+        module='stock_kit', type_='wizard')

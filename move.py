@@ -6,7 +6,7 @@ from trytond.pool import Pool, PoolMeta
 from trytond.pyson import In, Eval
 from trytond.transaction import Transaction
 
-__all__ = ['Move']
+__all__ = ['Move', 'CreateShipmentOutReturn']
 __metaclass__ = PoolMeta
 STATES = {
     'readonly': In(Eval('state'), ['cancel', 'assigned', 'done']),
@@ -33,113 +33,99 @@ class Move:
     def default_kit_depth():
         return 0
 
-    def get_kit_line(self, line, kit_line, depth):
-        '''
-        Given a line browse object and a kit dictionary returns the
-        dictionary of fields to be stored in a create statement.
-        '''
-        res = {}
-        uom_obj = Pool().get('product.uom')
-        quantity = uom_obj.compute_qty(kit_line.unit,
-                        kit_line.quantity, line.uom) * line.quantity
-
-        res['sequence'] = line.id + depth
-        res['product'] = kit_line.product.id
-        res['quantity'] = quantity
-        res['from_location'] = line.from_location.id
-        res['to_location'] = line.to_location.id
-        res['unit_price'] = line.unit_price
-        res['kit_depth'] = depth
-        res['kit_parent_line'] = line.id
-        res['planned_date'] = False
-        res['company'] = line.company.id
-        res['uom'] = line.uom.id
-        res['shipment_out'] = (line.shipment_out and line.shipment_out.id
-            or False)
-        res['shipment_in'] = (line.shipment_in and line.shipment_in.id
-            or False)
-        res['shipment_out_return'] = (line.shipment_out_return
-            and line.shipment_out_return.id or False)
-        res['shipment_in_return'] = (line.shipment_in_return
-            and line.shipment_in_return.id or False)
-        res['shipment_internal'] = (line.shipment_internal
-            and line.shipment_internal or False)
-        return res
-
-    def explode_kit(self, moves, depth=1):
+    @classmethod
+    def explode_kit(cls, moves):
         '''
         Walks through the Kit tree in depth-first order and returns
         a sorted list with all the components of the product.
         '''
-        line = self.browse(moves)
-        result = []
-        ''' Check if kit need to be Exploded '''
+        pool = Pool()
+        StockMove = pool.get('stock.move')
+        ProductUom = pool.get('product.uom')
         explode = Transaction().context.get('explode_kit', True)
-        if not explode:
-            return result
-        ''' Check if kit has been already expanded '''
-        if line.kit_child_lines:
-            return result
-        ''' Check if line belongs to any shipment '''
-        if not (line.shipment_in or line.shipment_out
-                or line.shipment_out_return or line.shipment_in_return
-                or line.shipment_internal):
-            return result
-        ''' Explode kit '''
-        for kit_line in line.product.kit_lines:
-            values = self.get_kit_line(line, kit_line, depth)
-            new_id = self.create(values)
-            self.explode_kit(new_id, depth + 1)
+        result = []
+        if explode:
+            for move in moves:
+                depth = move.kit_depth + 1
+                if (move.shipment and move.product and move.product.kit_lines
+                        and move.product.explode_kit_in_shipments):
+                    for kit_move in move.product.kit_lines:
+                        quantity = ProductUom.compute_qty(kit_move.unit,
+                            kit_move.quantity, move.uom) * move.quantity
+                        stock_move = StockMove()
+                        stock_move.sequence = move.id + depth
+                        stock_move.product = kit_move.product.id
+                        stock_move.quantity = quantity
+                        stock_move.from_location = move.from_location.id
+                        stock_move.to_location = move.to_location.id
+                        stock_move.unit_price = move.unit_price
+                        stock_move.kit_depth = depth
+                        stock_move.kit_parent_line = move.id
+                        stock_move.planned_date = None
+                        stock_move.company = move.company.id
+                        stock_move.uom = move.uom.id
+                        stock_move.shipment = '%s,%s' % (
+                            move.shipment.__name__, move.shipment.id)
+                        stock_move.save()
+                        result.append(stock_move)
         return result
 
-    def create(self, values):
-        #print Transaction().context
-        move = super(Move, self).create(values)
-        self.explode_kit(move)
-        return move
+    @classmethod
+    def create(cls, values):
+        moves = super(Move, cls).create(values)
+        moves.extend(cls.explode_kit(moves))
+        return moves
 
-    def kit_tree_ids(self, line):
+    def get_kit_moves(self):
         res = []
-        for kit_line in line.kit_child_lines:
-            res.append(kit_line.id)
-            res += self.kit_tree_ids(kit_line)
+        for kit_move in self.kit_child_lines:
+            res.append(kit_move)
+            res += kit_move.get_kit_moves()
         return res
 
-    def write(self, ids, values):
+    @classmethod
+    def write(cls, moves, values):
         ''' Regenerate kit if quantity, product or unit has changed '''
         if not('product' in values or 'quantity' in values
                 or 'unit' in values):
-            return super(Move, self).write(ids, values)
-        if isinstance(ids, (int, long)):
-            ids = [ids]
-        ids = ids[:]
+            return super(Move, cls).write(moves, values)
+        moves = moves[:]
         kits_to_reset = []
         moves_to_delete = []
-        for line in self.browse(ids):
-            if not line.product.kit:
+        for move in moves:
+            if not move.product.kit:
                 continue
-            if (('product' in values and line.product.id != values['product'])
+            if (('product' in values and move.product.id != values['product'])
                     or
                     ('quantity' in values
-                        and line.quantity != values['quantity'])
+                        and move.quantity != values['quantity'])
                     or
-                    ('unit' in values and line.unit != values['unit'])):
-                kits_to_reset.append(line.id)
-                moves_to_delete += self.kit_tree_ids(line)
+                    ('unit' in values and move.unit != values['unit'])):
+                kits_to_reset.append(move.id)
+                moves_to_delete += move.get_kit_moves()
         if moves_to_delete:
-            self.delete(moves_to_delete)
+            cls.delete(moves_to_delete)
         if kits_to_reset:
             for kit in kits_to_reset:
-                self.explode_kit(kit)
-        return super(Move, self).write(ids, values)
+                cls.explode_kit(kit)
+        return super(Move, cls).write(moves, values)
 
-    def delete(self, ids):
+    @classmethod
+    def delete(cls, moves):
         ''' Check if stock move to delete belongs to kit.'''
-        ids = ids[:]
-        for line in self.browse(ids):
-            if line.kit_parent_line:
+        moves = moves[:]
+        for move in moves:
+            if move.kit_parent_line:
                 continue
-            if line.kit_child_lines:
+            if move.kit_child_lines:
                 ''' Removing kit, adding all childs products to delete'''
-                ids += self.kit_tree_ids(line)
-        return super(Move, self).delete(ids)
+                moves += move.get_kit_moves()
+        return super(Move, cls).delete(moves)
+
+
+class CreateShipmentOutReturn:
+    __name__ = 'stock.shipment.out.return.create'
+
+    def do_start(self, action):
+        with Transaction().set_context({'explode_kit': False}):
+            return super(CreateShipmentOutReturn, self).do_start(action)

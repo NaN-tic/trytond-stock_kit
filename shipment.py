@@ -12,21 +12,23 @@ __metaclass__ = PoolMeta
 class ShipmentIn:
     __name__ = 'stock.shipment.in'
 
-    def create_inventory_moves(self, shipments):
+    @classmethod
+    def create_inventory_moves(cls, shipments):
         """ ensure no explode kits again on inventory moves """
         context = Transaction().context.copy()
         context['explode_kit'] = False
         with Transaction().set_context(context):
-            return super(ShipmentIn, self).create_inventory_moves(shipments)
+            return super(ShipmentIn, cls).create_inventory_moves(shipments)
 
 
 class ShipmentOut:
     __name__ = 'stock.shipment.out'
 
+    @classmethod
     @ModelView.button
     @Workflow.transition('waiting')
-    def wait(self, ids):
+    def wait(cls, shipments):
         context = Transaction().context.copy()
         context['explode_kit'] = False
         with Transaction().set_context(context):
-            return super(ShipmentOut, self).wait(ids)
+            return super(ShipmentOut, cls).wait(shipments)

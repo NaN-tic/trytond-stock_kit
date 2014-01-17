@@ -31,25 +31,24 @@ class Product:
     def default_stock_depends_on_kit_components():
         return False
 
-    def get_quantity(self, products, name):
-        res = super(Product, self).get_quantity(products, name)
+    @classmethod
+    def get_quantity(cls, products, name):
+        res = super(Product, cls).get_quantity(products, name)
         #Calculate stock for kits that stock depends on sub-products
-        for product in self.browse(products):
-            if not product.stock_depends_on_kit_components or \
-                not product.kit_lines:
-                continue
-            res[product.id] = 0.0
-            subproducts_ids = [x.product.id for x in product.kit_lines]
-            subproducts_stock = super(Product, self).get_quantity(
-                subproducts_ids, name)
-            pack_stock = False
-            for subproduct in product.kit_lines:
-                sub_qty = subproduct.quantity
-                sub_stock = subproducts_stock.get(subproduct.product.id, 0)
-                if not pack_stock:
-                    pack_stock = math.floor(sub_stock / sub_qty)
-                else:
-                    pack_stock = min(pack_stock,
-                                     math.floor(sub_stock / sub_qty))
-            res[product.id] = pack_stock
+        for product in products:
+            if product.stock_depends_on_kit_components and product.kit_lines:
+                res[product.id] = 0.0
+                subproducts = [x.product for x in product.kit_lines]
+                subproducts_stock = super(Product, cls).get_quantity(
+                    subproducts, name)
+                pack_stock = False
+                for subproduct in product.kit_lines:
+                    sub_qty = subproduct.quantity
+                    sub_stock = subproducts_stock.get(subproduct.product.id, 0)
+                    if not pack_stock:
+                        pack_stock = math.floor(sub_stock / sub_qty)
+                    else:
+                        pack_stock = min(pack_stock,
+                                         math.floor(sub_stock / sub_qty))
+                res[product.id] = pack_stock
         return res
