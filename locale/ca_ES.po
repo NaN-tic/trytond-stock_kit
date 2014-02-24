@@ -2,6 +2,22 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=utf-8\n"
 
+msgctxt "error:product.product:"
+msgid ""
+"The product \"%s\" is configured as a Kit with \"Stock Depends on "
+"Components\", but its template is not a Service or Consumable."
+msgstr ""
+"El producte \"%s\" està configurat com un kit en que \"L'estoc depen dels "
+"components\", pero la seva plantilla no és un Servei o Consumible."
+
+msgctxt "error:product.product:"
+msgid ""
+"The product \"%s\" is configured as a Kit with \"Stock Depends on "
+"Components\", but not to \"Explode in shipments\"."
+msgstr ""
+"El producte \"%s\" està configurat com un kit en que \"L'estoc depen dels "
+"components\", pero no té marcada l'opció \"Expandir en els albarans\"."
+
 msgctxt "field:product.product,explode_kit_in_shipments:"
 msgid "Explode in Shipments"
 msgstr "Expandir en els albarans"

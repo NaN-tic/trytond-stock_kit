@@ -5,8 +5,6 @@ The COPYRIGHT file at the top level of this repository contains the full copyrig
     <xpath
         expr="/form/group[@id='kit']/field[@name='kit']" 
         position="after">
-        <label name="explode_kit_in_shipments"/>
-        <field name="explode_kit_in_shipments"/>
         <label name="stock_depends_on_kit_components"/>
         <field name="stock_depends_on_kit_components"/>
     </xpath>

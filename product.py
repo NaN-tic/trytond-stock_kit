@@ -6,26 +6,45 @@ from trytond.pool import PoolMeta
 from trytond.pyson import Eval, Bool
 import math
 
-__all__ = ['Product']
+__all__ = ['Template', 'Product']
 __metaclass__ = PoolMeta
+
 STATES = {
     'invisible': Bool(~Eval('kit')),
-}
+    }
 DEPENDS = ['kit']
+
+
+class Template:
+    __name__ = 'product.template'
+
+    @classmethod
+    def validate(cls, templates):
+        super(Template, cls).validate(templates)
+        for template in templates:
+            template.check_type_and_products_stock_depends()
+
+    def check_type_and_products_stock_depends(self):
+        if not (self.consumable or self.type == 'service'):
+            for product in self.products:
+                product.check_stock_depends_and_product_type()
 
 
 class Product:
     __name__ = 'product.product'
-    explode_kit_in_shipments = fields.Boolean('Explode in Shipments',
-            states=STATES, depends=DEPENDS)
     stock_depends_on_kit_components = fields.Boolean('Stock Depends on '
             'Components', states=STATES, depends=DEPENDS,
             help='Indicates weather the stock of the current kit should'
                   ' depend on its components or not.')
 
-    @staticmethod
-    def default_explode_kit_in_shipments():
-        return True
+    @classmethod
+    def __setup__(cls):
+        super(Product, cls).__setup__()
+        cls._error_messages.update({
+                'invalid_stock_depends_and_type': ('The product "%s" is '
+                    'configured as a Kit with "Stock Depends on Components", '
+                    'but its template is not a Service or Consumable.'),
+                })
 
     @staticmethod
     def default_stock_depends_on_kit_components():
@@ -52,3 +71,16 @@ class Product:
                                          math.floor(sub_stock / sub_qty))
                 res[product.id] = pack_stock
         return res
+
+    @classmethod
+    def validate(cls, products):
+        super(Product, cls).validate(products)
+        for product in products:
+            product.check_stock_depends_and_product_type()
+
+    def check_stock_depends_and_product_type(self):
+        if (self.stock_depends_on_kit_components and
+                not (self.consumable or self.type == 'service')):
+            self.raise_user_error('invalid_stock_depends_and_type',
+                (self.rec_name,))
+
