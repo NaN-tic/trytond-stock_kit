@@ -53,23 +53,26 @@ class Product:
     @classmethod
     def get_quantity(cls, products, name):
         res = super(Product, cls).get_quantity(products, name)
+
         #Calculate stock for kits that stock depends on sub-products
+        def get_quantity_kit(product):
+            subproducts = [x.product for x in product.kit_lines]
+            subproducts_stock = super(Product, cls).get_quantity(
+                subproducts, name)
+            pack_stock = False
+            for subproduct in product.kit_lines:
+                sub_qty = subproduct.quantity
+                sub_stock = subproducts_stock.get(subproduct.product.id, 0)
+                if not pack_stock:
+                    pack_stock = math.floor(sub_stock / sub_qty)
+                else:
+                    pack_stock = min(pack_stock,
+                                     math.floor(sub_stock / sub_qty))
+            return pack_stock if pack_stock else 0.0
+
         for product in products:
             if product.stock_depends_on_kit_components and product.kit_lines:
-                res[product.id] = 0.0
-                subproducts = [x.product for x in product.kit_lines]
-                subproducts_stock = super(Product, cls).get_quantity(
-                    subproducts, name)
-                pack_stock = False
-                for subproduct in product.kit_lines:
-                    sub_qty = subproduct.quantity
-                    sub_stock = subproducts_stock.get(subproduct.product.id, 0)
-                    if not pack_stock:
-                        pack_stock = math.floor(sub_stock / sub_qty)
-                    else:
-                        pack_stock = min(pack_stock,
-                                         math.floor(sub_stock / sub_qty))
-                res[product.id] = pack_stock
+                res[product.id] = get_quantity_kit(product)
         return res
 
     @classmethod
