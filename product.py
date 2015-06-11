@@ -1,10 +1,11 @@
 #This file is part stock_kit module for Tryton.
 #The COPYRIGHT file at the top level of this repository contains
 #the full copyright notices and license terms.
+import math
 from trytond.model import fields
 from trytond.pool import PoolMeta
 from trytond.pyson import Eval, Bool
-import math
+
 
 __all__ = ['Template', 'Product']
 __metaclass__ = PoolMeta
@@ -52,17 +53,13 @@ class Product:
 
     @classmethod
     def get_quantity(cls, products, name):
-        res = super(Product, cls).get_quantity(products, name)
+        quantities = super(Product, cls).get_quantity(products, name)
 
-        #Calculate stock for kits that stock depends on sub-products
-        def get_quantity_kit(product):
-            subproducts = [x.product for x in product.kit_lines]
-            subproducts_stock = super(Product, cls).get_quantity(
-                subproducts, name)
+        def get_quantity_kit(product, quantities):
             pack_stock = False
             for subproduct in product.kit_lines:
                 sub_qty = subproduct.quantity
-                sub_stock = subproducts_stock.get(subproduct.product.id, 0)
+                sub_stock = quantities.get(subproduct.product.id, 0)
                 if not pack_stock:
                     pack_stock = math.floor(sub_stock / sub_qty)
                 else:
@@ -70,10 +67,16 @@ class Product:
                                      math.floor(sub_stock / sub_qty))
             return pack_stock if pack_stock else 0.0
 
-        for product in products:
+        products = products[:]
+        while products:
+            product = products.pop(0)
+            if (product.kit_lines and
+                    any([kl.product in products for kl in product.kit_lines])):
+                products.append(product)
+                continue
             if product.stock_depends_on_kit_components and product.kit_lines:
-                res[product.id] = get_quantity_kit(product)
-        return res
+                quantities[product.id] = get_quantity_kit(product, quantities)
+        return quantities
 
     @classmethod
     def validate(cls, products):
