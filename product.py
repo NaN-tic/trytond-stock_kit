@@ -59,6 +59,9 @@ class Product:
             pack_stock = False
             for subproduct in product.kit_lines:
                 sub_qty = subproduct.quantity
+                if subproduct.product.id not in quantities:
+                    quantities[subproduct.product.id] = cls.get_quantity(
+                        [subproduct.product], name)[subproduct.product.id]
                 sub_stock = quantities.get(subproduct.product.id, 0)
                 if not pack_stock:
                     pack_stock = math.floor(sub_stock / sub_qty)
