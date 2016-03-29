@@ -4,10 +4,10 @@
 from trytond.pool import PoolMeta
 
 __all__ = ['InventoryLine']
-__metaclass__ = PoolMeta
 
 
 class InventoryLine:
+    __metaclass__ = PoolMeta
     __name__ = 'stock.inventory.line'
 
     @classmethod

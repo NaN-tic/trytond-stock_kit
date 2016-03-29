@@ -8,7 +8,6 @@ from trytond.pyson import Eval, Bool
 
 
 __all__ = ['Template', 'Product']
-__metaclass__ = PoolMeta
 
 STATES = {
     'invisible': Bool(~Eval('kit')),
@@ -17,6 +16,7 @@ DEPENDS = ['kit']
 
 
 class Template:
+    __metaclass__ = PoolMeta
     __name__ = 'product.template'
 
     @classmethod
@@ -32,6 +32,7 @@ class Template:
 
 
 class Product:
+    __metaclass__ = PoolMeta
     __name__ = 'product.product'
     stock_depends_on_kit_components = fields.Boolean('Stock Depends on '
             'Components', states=STATES, depends=DEPENDS,
