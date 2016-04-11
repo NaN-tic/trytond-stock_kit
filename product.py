@@ -1,7 +1,7 @@
-#This file is part stock_kit module for Tryton.
-#The COPYRIGHT file at the top level of this repository contains
-#the full copyright notices and license terms.
+# The COPYRIGHT file at the top level of this repository contains the full
+# copyright notices and license terms.
 import math
+
 from trytond.model import fields
 from trytond.pool import PoolMeta
 from trytond.pyson import Eval, Bool
@@ -93,4 +93,3 @@ class Product:
                 not (self.consumable or self.type == 'service')):
             self.raise_user_error('invalid_stock_depends_and_type',
                 (self.rec_name,))
-
