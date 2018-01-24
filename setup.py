@@ -14,7 +14,9 @@ except ImportError:
 
 MODULE = 'stock_kit'
 PREFIX = 'trytonspain'
-MODULE2PREFIX = {}
+MODULE2PREFIX = {
+    'product_kit': 'trytonspain',
+    }
 
 
 def read(fname):
@@ -50,8 +52,20 @@ for dep in info.get('depends', []):
         requires.append(get_require_version('%s_%s' % (prefix, dep)))
 requires.append(get_require_version('trytond'))
 
-tests_require = [get_require_version('proteus')]
-dependency_links = []
+tests_require = []
+series = '%s.%s' % (major_version, minor_version)
+if minor_version % 2:
+    branch = 'default'
+else:
+    branch = series
+dependency_links = [
+    ('hg+https://bitbucket.org/trytonspain/'
+        'trytond-product_kit@%(branch)s'
+        '#egg=trytonspain-product_kit-%(series)s' % {
+            'branch': branch,
+            'series': series,
+            }),
+    ]
 if minor_version % 2:
     # Add development index for testing with proteus
     dependency_links.append('https://trydevpi.tryton.org/')
@@ -117,7 +131,4 @@ setup(name='%s_%s' % (PREFIX, MODULE),
     test_loader='trytond.test_loader:Loader',
     tests_require=tests_require,
     use_2to3=True,
-    convert_2to3_doctests=[
-        'tests/scenario_stock_kit.rst',
-        ],
     )
