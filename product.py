@@ -15,8 +15,7 @@ STATES = {
 DEPENDS = ['kit']
 
 
-class Template:
-    __metaclass__ = PoolMeta
+class Template(metaclass=PoolMeta):
     __name__ = 'product.template'
 
     @classmethod
@@ -31,8 +30,7 @@ class Template:
                 product.check_stock_depends_and_product_type()
 
 
-class Product:
-    __metaclass__ = PoolMeta
+class Product(metaclass=PoolMeta):
     __name__ = 'product.product'
     stock_depends_on_kit_components = fields.Boolean('Stock Depends on '
             'Components', states=STATES, depends=DEPENDS,

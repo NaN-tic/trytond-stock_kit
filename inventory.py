@@ -5,8 +5,7 @@ from trytond.pool import PoolMeta
 __all__ = ['InventoryLine']
 
 
-class InventoryLine:
-    __metaclass__ = PoolMeta
+class InventoryLine(metaclass=PoolMeta):
     __name__ = 'stock.inventory.line'
 
     @classmethod
