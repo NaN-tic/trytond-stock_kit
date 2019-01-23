@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<!-- This file is part of Tryton.  The COPYRIGHT file at the top level of
+this repository contains the full copyright notices and license terms. -->
+<tryton>
+    <data group="1">
+      <record model="ir.message" id="invalid_stock_depends_and_type">
+          <field name="text">The product "%(product)s" is configured as a Kit with "Stock Depends on Components", but its template is not a Service or Consumable.</field>
+      </record>
+    </data>
+</tryton>

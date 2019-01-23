@@ -5,7 +5,8 @@ import math
 from trytond.model import fields
 from trytond.pool import PoolMeta
 from trytond.pyson import Eval, Bool
-
+from trytond.i18n import gettext
+from trytond.exceptions import UserError
 
 __all__ = ['Template', 'Product']
 
@@ -36,15 +37,6 @@ class Product(metaclass=PoolMeta):
             'Components', states=STATES, depends=DEPENDS,
             help='Indicates weather the stock of the current kit should'
                   ' depend on its components or not.')
-
-    @classmethod
-    def __setup__(cls):
-        super(Product, cls).__setup__()
-        cls._error_messages.update({
-                'invalid_stock_depends_and_type': ('The product "%s" is '
-                    'configured as a Kit with "Stock Depends on Components", '
-                    'but its template is not a Service or Consumable.'),
-                })
 
     @staticmethod
     def default_stock_depends_on_kit_components():
@@ -89,5 +81,6 @@ class Product(metaclass=PoolMeta):
     def check_stock_depends_and_product_type(self):
         if (self.stock_depends_on_kit_components and
                 not (self.consumable or self.type == 'service')):
-            self.raise_user_error('invalid_stock_depends_and_type',
-                (self.rec_name,))
+            raise UserError(gettext(
+                'stock_kit.invalid_stock_depends_and_type',
+                product=self.rec_name))
