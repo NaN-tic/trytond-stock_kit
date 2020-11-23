@@ -49,6 +49,8 @@ class Product(metaclass=PoolMeta):
         def get_quantity_kit(product, quantities):
             pack_stock = False
             for subproduct in product.kit_lines:
+                if subproduct.product.type != 'goods':
+                    continue
                 sub_qty = subproduct.quantity
                 if subproduct.product.id not in quantities:
                     quantities[subproduct.product.id] = cls.get_quantity(
