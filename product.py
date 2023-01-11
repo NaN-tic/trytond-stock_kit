@@ -47,7 +47,7 @@ class Product(metaclass=PoolMeta):
         quantities = super(Product, cls).get_quantity(products, name)
 
         def get_quantity_kit(product, quantities):
-            pack_stock = False
+            pack_stock = None
             for subproduct in product.kit_lines:
                 if subproduct.product.type != 'goods':
                     continue
@@ -56,7 +56,7 @@ class Product(metaclass=PoolMeta):
                     quantities[subproduct.product.id] = cls.get_quantity(
                         [subproduct.product], name)[subproduct.product.id]
                 sub_stock = quantities.get(subproduct.product.id, 0)
-                if not pack_stock:
+                if pack_stock is None:
                     pack_stock = math.floor(sub_stock / sub_qty)
                 else:
                     pack_stock = min(pack_stock,
