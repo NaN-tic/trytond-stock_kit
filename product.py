@@ -13,7 +13,6 @@ __all__ = ['Template', 'Product']
 STATES = {
     'invisible': Bool(~Eval('kit')),
     }
-DEPENDS = ['kit']
 
 
 class Template(metaclass=PoolMeta):
@@ -34,7 +33,7 @@ class Template(metaclass=PoolMeta):
 class Product(metaclass=PoolMeta):
     __name__ = 'product.product'
     stock_depends_on_kit_components = fields.Boolean('Stock Depends on '
-            'Components', states=STATES, depends=DEPENDS,
+            'Components', states=STATES,
             help='Indicates weather the stock of the current kit should'
                   ' depend on its components or not.')
 
