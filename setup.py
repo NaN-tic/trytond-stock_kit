@@ -50,7 +50,7 @@ requires += [get_require_version('trytond_stock')]
 
 tests_require = [
     get_require_version('proteus'),
-    
+
     ]
 
 series = '%s.%s' % (major_version, minor_version)
@@ -63,7 +63,7 @@ dependency_links = [
    ('git+https://github.com/trytonspain/'
        'trytond-product_kit@%(branch)s'
        '#egg=trytonspain-product_kit-%(series)s'%{
-               'branch': branch, 
+               'branch': branch,
                'series': series,}),
 ]
 
