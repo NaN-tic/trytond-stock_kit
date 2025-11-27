@@ -6,7 +6,7 @@ from trytond.model import fields
 from trytond.pool import PoolMeta
 from trytond.pyson import Eval, Bool
 from trytond.i18n import gettext
-from trytond.exceptions import UserError
+from trytond.model.exceptions import ValidationError
 
 __all__ = ['Template', 'Product']
 
@@ -82,6 +82,6 @@ class Product(metaclass=PoolMeta):
     def check_stock_depends_and_product_type(self):
         if (self.stock_depends_on_kit_components and
                 not (self.consumable or self.type == 'service')):
-            raise UserError(gettext(
+            raise ValidationError(gettext(
                 'stock_kit.invalid_stock_depends_and_type',
                 product=self.rec_name))
