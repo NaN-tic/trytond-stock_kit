@@ -14,5 +14,17 @@ The COPYRIGHT file at the top level of this repository contains the full copyrig
             <field name="inherit" ref="product.product_view_form_simple"/>
             <field name="name">product_form_simple</field>
         </record>
+
+        <record model="ir.ui.view" id="product_view_list_stock_move">
+            <field name="model">product.product</field>
+            <field name="inherit" ref="stock.product_view_list_stock_move"/>
+            <field name="name">product_list_stock_move</field>
+        </record>
+
+        <record model="ir.ui.view" id="products_by_locations_view_list">
+            <field name="model">stock.products_by_locations</field>
+            <field name="inherit" ref="stock.products_by_locations_view_list"/>
+            <field name="name">products_by_locations_list</field>
+        </record>
     </data>
 </tryton>
