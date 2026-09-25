@@ -3,10 +3,11 @@
 import math
 
 from trytond.model import fields
-from trytond.pool import PoolMeta
+from trytond.pool import Pool, PoolMeta
 from trytond.pyson import Eval, Bool
 from trytond.i18n import gettext
 from trytond.model.exceptions import ValidationError
+from trytond.transaction import Transaction
 
 __all__ = ['Template', 'Product']
 
@@ -20,6 +21,9 @@ class Template(metaclass=PoolMeta):
 
     @classmethod
     def validate(cls, templates):
+        Product = Pool().get('product.product')
+        Product.ensure_kit_consumable([
+                p for t in templates for p in t.products])
         super(Template, cls).validate(templates)
         for template in templates:
             template.check_type_and_products_stock_depends()
@@ -36,6 +40,19 @@ class Product(metaclass=PoolMeta):
             'Components', states=STATES,
             help='Indicates weather the stock of the current kit should'
                   ' depend on its components or not.')
+
+    @classmethod
+    def __register__(cls, module_name):
+        super().__register__(module_name)
+        template = Pool().get('product.template').__table__()
+        product = cls.__table__()
+        cursor = Transaction().connection.cursor()
+        cursor.execute(*template.update(
+                [template.type, template.consumable], ['goods', True],
+                where=template.id.in_(product.select(product.template,
+                        where=product.kit
+                        & product.stock_depends_on_kit_components))
+                & ((template.type != 'goods') | ~template.consumable)))
 
     @staticmethod
     def default_stock_depends_on_kit_components():
@@ -75,9 +92,27 @@ class Product(metaclass=PoolMeta):
 
     @classmethod
     def validate(cls, products):
+        cls.ensure_kit_consumable(products)
         super(Product, cls).validate(products)
         for product in products:
             product.check_stock_depends_and_product_type()
+
+    @classmethod
+    def ensure_kit_consumable(cls, products):
+        Template = Pool().get('product.template')
+        templates = {p.template for p in products
+            if p.kit and p.stock_depends_on_kit_components
+            and (p.type != 'goods' or not p.consumable)}
+        if templates:
+            Template.write(list(templates), {
+                    'type': 'goods', 'consumable': True})
+
+    @fields.depends('kit', 'stock_depends_on_kit_components', 'template',
+        '_parent_template.type', '_parent_template.consumable')
+    def on_change_stock_depends_on_kit_components(self):
+        if self.kit and self.stock_depends_on_kit_components and self.template:
+            self.template.type = 'goods'
+            self.template.consumable = True
 
     def check_stock_depends_and_product_type(self):
         if (self.stock_depends_on_kit_components and
