@@ -4,6 +4,7 @@
 from trytond.pool import Pool
 from . import product
 from . import inventory
+from . import location
 
 
 def register():
@@ -11,4 +12,5 @@ def register():
         product.Template,
         product.Product,
         inventory.InventoryLine,
+        location.ProductsByLocations,
         module='stock_kit', type_='model')

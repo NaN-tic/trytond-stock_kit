@@ -3,10 +3,11 @@
 import math
 
 from trytond.model import fields
-from trytond.pool import PoolMeta
-from trytond.pyson import Eval, Bool
+from trytond.pool import Pool, PoolMeta
+from trytond.pyson import Bool, Eval
 from trytond.i18n import gettext
 from trytond.model.exceptions import ValidationError
+from trytond.transaction import Transaction
 
 __all__ = ['Template', 'Product']
 
@@ -36,42 +37,86 @@ class Product(metaclass=PoolMeta):
             'Components', states=STATES,
             help='Indicates weather the stock of the current kit should'
                   ' depend on its components or not.')
+    kit_available_quantity = fields.Function(fields.Float(
+            'Available Kit Quantity', digits='default_uom',
+            states={
+                'invisible': ~(Bool(Eval('kit'))
+                    & Bool(Eval('stock_depends_on_kit_components'))),
+                },
+            help='The number of kits that can be assembled from the current '
+                'stock of their components.'),
+        'get_kit_available_quantity')
 
     @staticmethod
     def default_stock_depends_on_kit_components():
         return False
 
     @classmethod
-    def get_quantity(cls, products, name):
-        quantities = super(Product, cls).get_quantity(products, name)
+    def get_kit_available_quantity(cls, products, name):
+        if not Transaction().context.get('locations'):
+            Location = Pool().get('stock.location')
+            warehouses = Location.search([('type', '=', 'warehouse')])
+            result = {product.id: None for product in products}
+            for warehouse in warehouses:
+                with Transaction().set_context(locations=[warehouse.id]):
+                    quantities = cls.get_kit_available_quantity(products, name)
+                for product in products:
+                    quantity = quantities[product.id]
+                    if quantity is not None:
+                        result[product.id] = (
+                            (result[product.id] or 0.0) + quantity)
+            return result
 
-        def get_quantity_kit(product, quantities):
+        component_products = {}
+
+        def add_components(product):
+            for line in product.kit_lines:
+                component = line.product
+                if component.type != 'goods':
+                    continue
+                if component.id in component_products:
+                    continue
+                component_products[component.id] = component
+                if (component.stock_depends_on_kit_components
+                        and component.kit_lines):
+                    add_components(component)
+
+        for product in products:
+            if (product.stock_depends_on_kit_components
+                    and product.kit_lines):
+                add_components(product)
+
+        quantities = super(Product, cls).get_quantity(
+            list(component_products.values()), 'quantity')
+        kit_quantities = {}
+
+        def get_quantity_kit(product):
+            if product.id in kit_quantities:
+                return kit_quantities[product.id]
             pack_stock = None
             for subproduct in product.kit_lines:
                 if subproduct.product.type != 'goods':
                     continue
                 sub_qty = subproduct.quantity
-                if subproduct.product.id not in quantities:
-                    quantities[subproduct.product.id] = cls.get_quantity(
-                        [subproduct.product], name)[subproduct.product.id]
-                sub_stock = quantities.get(subproduct.product.id, 0)
+                if (subproduct.product.stock_depends_on_kit_components
+                        and subproduct.product.kit_lines):
+                    sub_stock = get_quantity_kit(subproduct.product)
+                else:
+                    sub_stock = quantities.get(subproduct.product.id, 0)
                 if pack_stock is None:
                     pack_stock = math.floor(sub_stock / sub_qty)
                 else:
                     pack_stock = min(pack_stock,
                                      math.floor(sub_stock / sub_qty))
-            return pack_stock if pack_stock else 0.0
+            kit_quantities[product.id] = pack_stock if pack_stock else 0.0
+            return kit_quantities[product.id]
 
-        products = products[:]
-        while products:
-            product = products.pop(0)
-            if (product.kit_lines and
-                    any([kl.product in products for kl in product.kit_lines])):
-                products.append(product)
-                continue
-            if product.stock_depends_on_kit_components and product.kit_lines:
-                quantities[product.id] = get_quantity_kit(product, quantities)
-        return quantities
+        result = {product.id: None for product in products}
+        for product in products:
+            if (product.stock_depends_on_kit_components
+                    and product.kit_lines):
+                result[product.id] = get_quantity_kit(product)
+        return result
 
     @classmethod
     def validate(cls, products):

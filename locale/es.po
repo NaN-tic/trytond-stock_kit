@@ -11,3 +11,15 @@ msgid ""
 "Indicates weather the stock of the current kit should depend on its "
 "components or not."
 msgstr "Indica si el stock del kit actual depende de sus componentes o no."
+
+msgctxt "field:product.product,kit_available_quantity:"
+msgid "Available Kit Quantity"
+msgstr "Kits montables"
+
+msgctxt "field:stock.products_by_locations,kit_available_quantity:"
+msgid "Available Kit Quantity"
+msgstr "Kits montables"
+
+msgctxt "help:product.product,kit_available_quantity:"
+msgid "The number of kits that can be assembled from the current stock of their components."
+msgstr "El número de kits que se pueden montar con el stock actual de sus componentes."
